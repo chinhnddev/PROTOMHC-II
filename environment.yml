@@ -1,0 +1,27 @@
+# environment.yml
+name: mhcii-15mer
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch=2.3.0
+  - pytorch-cuda=12.1
+  - torchvision
+  - torchaudio
+  - pip
+  - pip:
+      - fair-esm==2.0.0
+      - transformers
+      - pandas
+      - scikit-learn
+      - matplotlib
+      - seaborn
+      - biopython
+      - hydra-core>=1.3
+      - pytorch-lightning>=2.0
+      - wandb
+      - gdown
+      - openpyxl

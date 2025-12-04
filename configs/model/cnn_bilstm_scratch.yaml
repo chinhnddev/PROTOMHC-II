@@ -1,0 +1,4 @@
+_target_: src.models.cnn_bilstm_scratch.CNNBiLSTMScratch
+vocab_size: 25
+embed_dim: 128
+lr: 0.001

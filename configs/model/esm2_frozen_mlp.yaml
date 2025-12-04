@@ -1,0 +1,2 @@
+_target_: src.models.esm2_frozen_mlp.ESM2FrozenMLP
+lr: 0.0003

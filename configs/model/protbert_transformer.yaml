@@ -1,0 +1,2 @@
+_target_: src.models.protbert_transformer.ProtBERTTransformer
+lr: 0.0002

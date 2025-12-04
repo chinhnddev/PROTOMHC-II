@@ -1,0 +1,5 @@
+_target_: src.data.datamodule.AntigenicityDataModule
+batch_size: ${exp.batch_size}
+data_path: 15mer_antigenicity_dataset.parquet
+num_workers: 4
+pin_memory: true

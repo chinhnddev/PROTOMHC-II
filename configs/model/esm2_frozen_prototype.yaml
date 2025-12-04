@@ -1,0 +1,3 @@
+_target_: src.models.esm2_frozen_prototype.ProtoMHCII
+num_prototypes: 35
+lr: 0.0002

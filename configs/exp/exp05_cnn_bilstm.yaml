@@ -1,0 +1,6 @@
+name: exp05_cnn_bilstm
+batch_size: 128
+epochs: 5
+seed: 42
+log_every_n_steps: 10
+model: cnn_bilstm_scratch

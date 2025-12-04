@@ -1,0 +1,10 @@
+defaults:
+  - exp: exp01_esm2_transformer  # load experiment first so its values are available
+  - data: default                # can reference exp fields (e.g., batch_size)
+  - model: ${exp.model}          # pick model config based on exp.model string
+  - _self_
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null

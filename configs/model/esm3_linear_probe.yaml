@@ -1,0 +1,2 @@
+_target_: src.models.esm3_linear_probe.ESM3LinearProbe
+lr: 0.0001
