@@ -103,7 +103,7 @@ class ProtoMHCII(pl.LightningModule):
             weight_decay=self.hparams.weight_decay
         )
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="max", factor=0.5, patience=2, verbose=True
+            optimizer, mode="max", factor=0.5, patience=2
         )
         return {
             "optimizer": optimizer,
