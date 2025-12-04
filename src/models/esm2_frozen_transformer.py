@@ -49,7 +49,7 @@ class ESM2FrozenTransformer(pl.LightningModule):
         loss = F.binary_cross_entropy_with_logits(logits, y)
         preds = torch.sigmoid(logits)
         self.log("val_loss", loss, prog_bar=True)
-        self.log("val_auroc", tmf.auroc(preds, y.int()), prog_bar=True)
+        self.log("val_auroc", tmf.auroc(preds, y.int(), task="binary"), prog_bar=True)
         return loss
 
     def configure_optimizers(self):

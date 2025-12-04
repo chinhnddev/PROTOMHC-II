@@ -59,7 +59,7 @@ class ProtoMHCII(pl.LightningModule):
         loss = F.binary_cross_entropy_with_logits(logits, y)
         preds = torch.sigmoid(logits)
         self.log("val_loss", loss, prog_bar=True)
-        self.log("val_auroc", tmf.auroc(preds, y.int()), prog_bar=True)
+        self.log("val_auroc", tmf.auroc(preds, y.int(), task="binary"), prog_bar=True)
         # Save a small sample of attention weights for later visualization
         self.example_attn = attn_weights.detach().cpu()
         return loss
