@@ -1,7 +1,7 @@
 defaults:
-  - exp: exp01_esm2_transformer  # load experiment first so its values are available
-  - data: default                # can reference exp fields (e.g., batch_size)
-  - model: ${exp.model}          # pick model config based on exp.model string
+  - exp: exp01_esm2_transformer
+  - data: default
+  - model: esm2_frozen_transformer  # override per run: model=...
   - _self_
 
 hydra:

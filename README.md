@@ -12,7 +12,7 @@ Place `15mer_antigenicity_dataset.parquet` at repo root (or run `python data/pre
 
 3. Train one model
 ```
-python run.py exp=exp02_prototype
+python run.py exp=exp02_prototype model=esm2_frozen_prototype
 ```
 Outputs go to `checkpoints/exp02_prototype/`.
 
