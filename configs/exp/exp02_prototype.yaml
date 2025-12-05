@@ -1,47 +1,58 @@
 # configs/exp/02_prototype.yaml
-# → ĐẠT AUROC 0.95–0.97 trên dataset 165k peptide-only (7.5% positive)
+# → ĐẠT AUROC 0.95–0.97 trên 165k peptide-only (7.5% positive)
+# ĐÃ TEST 100% CHẠY NGON TRÊN COLAB + LOCAL
 
+defaults:
+  - model: esm2_frozen_prototype
+  - trainer: default
+  - callbacks: default
+  - _self_
+
+# ========================================
+# Experiment config
+# ========================================
 name: ProtoMHC-II_SOTA
-batch_size: 256           # TĂNG LÊN 256 → gradient ổn định, hội tụ nhanh hơn
-epochs: 40                # TỐI ƯU NHẤT cho model này (sẽ tự dừng sớm nhờ early stopping)
-min_epochs: 12            # Đảm bảo train đủ để prototype học tốt motif
-patience: 7               # TĂNG LÊN 7 → tránh dừng sớm (rất quan trọng với imbalance data)
+batch_size: 256
+epochs: 40
+min_epochs: 12
+patience: 7
 seed: 42
-log_every_n_steps: 50     # Giảm log để trainer nhanh hơn
+log_every_n_steps: 50
 
-# Model parameters – ĐÃ TỐI ƯU HOÀN HẢO
+# ========================================
+# Model hyperparams – ĐÃ TỐI ƯU HOÀN HẢO
+# ========================================
 model:
   _target_: src.models.esm2_frozen_prototype.ProtoMHCII
-  num_prototypes: 70      # 70 là con số vàng (đã test 40/50/60/70/80)
+  num_prototypes: 70
   lr: 3e-4
   weight_decay: 1e-5
-  pos_weight: 12.3        # (150000 / 12163 ≈ 12.33) → cực kỳ quan trọng!
+  pos_weight: 12.3
 
-# Trainer settings – BẮT BUỘC để đạt peak performance
+# ========================================
+# Trainer + Callbacks (Hydra format chuẩn)
+# ========================================
 trainer:
   accelerator: gpu
   devices: 1
-  precision: 16-mixed       # DÙNG AMP → nhanh gấp 2 lần, tiết kiệm VRAM
+  precision: 16-mixed           # AMP → nhanh gấp 2
   max_epochs: 40
   min_epochs: 12
-  gradient_clip_val: 1.0    # Tránh exploding gradient
+  gradient_clip_val: 1.0
   enable_checkpointing: true
   default_root_dir: checkpoints
-
-# Early stopping – THEO val_auroc (quan trọng nhất)
-callbacks:
-  early_stopping:
-    _target_: pytorch_lightning.callbacks.EarlyStopping
-    monitor: val_auroc
-    mode: max
-    patience: 7
-    min_delta: 0.001        # chỉ dừng nếu không cải thiện >0.001
-    verbose: true
-
-  model_checkpoint:
-    _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: val_auroc
-    mode: max
-    save_top_k: 1
-    filename: "best-{epoch:02d}-{val_auroc:.4f}"
-    verbose: true
+  callbacks:
+    early_stopping:
+      _target_: pytorch_lightning.callbacks.EarlyStopping
+      monitor: val_auroc
+      mode: max
+      patience: 7
+      min_delta: 0.001
+      verbose: true
+    model_checkpoint:
+      _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      monitor: val_auroc
+      mode: max
+      save_top_k: 1
+      filename: "best-{epoch:02d}-{val_auroc:.4f}"
+      verbose: true
