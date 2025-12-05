@@ -17,7 +17,10 @@ def main(cfg: DictConfig):
 
     # Instantiate datamodule and model from Hydra configs
     datamodule = hydra.utils.instantiate(cfg.data)
-    model = hydra.utils.instantiate(cfg.model)
+    model_cfg = cfg.get("model", None) or cfg.exp.get("model", None)
+    if model_cfg is None:
+        raise ValueError("Model config not found. Provide `model` at top level or under `exp.model`.")
+    model = hydra.utils.instantiate(model_cfg)
 
     # Trainer setup
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
