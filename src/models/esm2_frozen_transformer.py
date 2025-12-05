@@ -13,12 +13,10 @@ class ESM2FrozenTransformer(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        # ESM-2 frozen
         self.esm, self.alphabet = esm.pretrained.esm2_t33_650M_UR50D()
         for p in self.esm.parameters():
             p.requires_grad = False
 
-        # Transformer encoder
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=1280, nhead=20, batch_first=True, dropout=0.1, activation="gelu"
         )
@@ -28,7 +26,6 @@ class ESM2FrozenTransformer(pl.LightningModule):
             nn.Linear(1280, 1)
         )
 
-        # Handle imbalance
         self.register_buffer("pos_weight", torch.tensor(pos_weight))
 
     def forward(self, peptides):
@@ -49,16 +46,20 @@ class ESM2FrozenTransformer(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         peptides, y = batch
         logits = self(peptides)
-        loss = F.binary_cross_entropy_with_logits(logits, y, pos_weight=self.pos_weight)
+        # SỬA TẠI ĐÂY
+        loss = F.binary_cross_entropy_with_logits(logits, y.float())
+        loss = loss * self.pos_weight.to(y.device)
+        
         self.log("train_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         peptides, y = batch
         logits = self(peptides)
-        loss = F.binary_cross_entropy_with_logits(logits, y, pos_weight=self.pos_weight)
+        loss = F.binary_cross_entropy_with_logits(logits, y.float())
+        loss = loss * self.pos_weight.to(y.device)
+        
         preds = torch.sigmoid(logits)
-
         self.log("val_loss", loss, prog_bar=True, on_epoch=True)
         self.log("val_auroc", tmf.auroc(preds, y.int(), task="binary"), prog_bar=True, on_epoch=True)
         auprc = average_precision_score(y.cpu().numpy(), preds.cpu().numpy())
