@@ -31,23 +31,6 @@ def main(cfg: DictConfig):
     os.makedirs(default_root_dir, exist_ok=True)
     print(f"Checkpoints will be saved to: {default_root_dir}")
 
-    callbacks = []
-    patience = getattr(cfg.exp, "patience", None)
-    if patience:
-        callbacks.append(
-            EarlyStopping(monitor="val_auroc", mode="max", patience=patience, verbose=True)
-        )
-
-    checkpoint_callback = ModelCheckpoint(
-        dirpath=default_root_dir,
-        filename="best",
-        monitor="val_auroc",
-        mode="max",
-        save_last=True,
-        verbose=True,
-    )
-    callbacks.append(checkpoint_callback)
-
     # If trainer config provided in exp, use it; otherwise fallback defaults
     trainer_kwargs = {
         "max_epochs": cfg.exp.epochs,
@@ -59,13 +42,19 @@ def main(cfg: DictConfig):
         "enable_checkpointing": True,
     }
 
+    callbacks = []
+    checkpoint_callback = None
+
     exp_trainer_cfg = cfg.exp.get("trainer", None)
     if exp_trainer_cfg:
         # Instantiate callbacks from config if provided
         callbacks_cfg = exp_trainer_cfg.get("callbacks", None)
         if callbacks_cfg:
             for _, cb_cfg in callbacks_cfg.items():
-                callbacks.append(hydra.utils.instantiate(cb_cfg))
+                cb = hydra.utils.instantiate(cb_cfg)
+                callbacks.append(cb)
+                if isinstance(cb, ModelCheckpoint):
+                    checkpoint_callback = cb
 
         # Merge trainer kwargs, preferring explicit exp.trainer fields
         for k, v in exp_trainer_cfg.items():
@@ -74,6 +63,25 @@ def main(cfg: DictConfig):
             trainer_kwargs[k] = v
 
         trainer_kwargs.setdefault("default_root_dir", default_root_dir)
+
+    # Add defaults only if not supplied in exp.trainer.callbacks
+    if checkpoint_callback is None:
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=default_root_dir,
+            filename="best",
+            monitor="val_auroc",
+            mode="max",
+            save_last=True,
+            verbose=True,
+        )
+        callbacks.append(checkpoint_callback)
+
+    if exp_trainer_cfg is None or not exp_trainer_cfg.get("callbacks", None):
+        patience = getattr(cfg.exp, "patience", None)
+        if patience:
+            callbacks.append(
+                EarlyStopping(monitor="val_auroc", mode="max", patience=patience, verbose=True)
+            )
 
     trainer = pl.Trainer(callbacks=callbacks, **trainer_kwargs)
     trainer.fit(model, datamodule=datamodule)
