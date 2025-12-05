@@ -1,6 +1,53 @@
-name: exp01_esm2_transformer
-batch_size: 64
-epochs: 3
+
+
+defaults:
+  - _self_
+
+# ========================================
+# Experiment info
+# ========================================
+name: ESM2_Frozen_Transformer
+batch_size: 256
+epochs: 30
+min_epochs: 10
 seed: 42
-log_every_n_steps: 10
-model: esm2_frozen_transformer
+log_every_n_steps: 50
+
+# ========================================
+# MODEL PARAMETERS (gộp luôn vào đây)
+# ========================================
+model:
+  _target_: src.models.esm2_frozen_transformer.ESM2FrozenTransformer
+  num_layers: 6          # 6 layer là tối ưu
+  lr: 0.0003
+  pos_weight: 12.33      # cực kỳ quan trọng với 7.5% positive
+
+# ========================================
+# Trainer + Callbacks
+# ========================================
+trainer:
+  accelerator: gpu
+  devices: 1
+  precision: 16-mixed
+  max_epochs: 30
+  min_epochs: 10
+  gradient_clip_val: 1.0
+  enable_checkpointing: true
+  default_root_dir: checkpoints
+
+  callbacks:
+    early_stopping:
+      _target_: pytorch_lightning.callbacks.EarlyStopping
+      monitor: val_auroc
+      mode: max
+      patience: 7
+      min_delta: 0.001
+      verbose: true
+
+    model_checkpoint:
+      _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      monitor: val_auroc
+      mode: max
+      save_top_k: 1
+      filename: "esm2_trans-{epoch:02d}-{val_auroc:.4f}"
+      verbose: true

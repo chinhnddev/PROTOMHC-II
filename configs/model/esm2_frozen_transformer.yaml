@@ -1,3 +1,5 @@
+# configs/model/esm2_frozen_transformer.yaml
 _target_: src.models.esm2_frozen_transformer.ESM2FrozenTransformer
-num_layers: 4
-lr: 0.0002
+num_layers: 6
+lr: 0.0003
+pos_weight: 12.33

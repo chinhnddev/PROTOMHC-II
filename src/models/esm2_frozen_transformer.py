@@ -1,25 +1,35 @@
-"""ESM-2 frozen encoder with Transformer head."""
+# src/models/esm2_frozen_transformer.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import esm
 import pytorch_lightning as pl
 import torchmetrics.functional as tmf
+from sklearn.metrics import average_precision_score
 
 
 class ESM2FrozenTransformer(pl.LightningModule):
-    def __init__(self, num_layers: int = 4, lr: float = 2e-4):
+    def __init__(self, num_layers: int = 6, lr: float = 3e-4, pos_weight: float = 12.33):
         super().__init__()
         self.save_hyperparameters()
+
+        # ESM-2 frozen
         self.esm, self.alphabet = esm.pretrained.esm2_t33_650M_UR50D()
         for p in self.esm.parameters():
             p.requires_grad = False
 
+        # Transformer encoder
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=1280, nhead=20, batch_first=True, dropout=0.1
+            d_model=1280, nhead=20, batch_first=True, dropout=0.1, activation="gelu"
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.classifier = nn.Linear(1280, 1)
+        self.classifier = nn.Sequential(
+            nn.LayerNorm(1280),
+            nn.Linear(1280, 1)
+        )
+
+        # Handle imbalance
+        self.register_buffer("pos_weight", torch.tensor(pos_weight))
 
     def forward(self, peptides):
         batch_converter = self.alphabet.get_batch_converter()
@@ -29,7 +39,7 @@ class ESM2FrozenTransformer(pl.LightningModule):
 
         with torch.no_grad():
             results = self.esm(tokens, repr_layers=[33])
-        x = results["representations"][33]  # (B, L, 1280)
+        x = results["representations"][33]
 
         x = self.transformer(x)
         x = x.mean(dim=1)
@@ -39,18 +49,26 @@ class ESM2FrozenTransformer(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         peptides, y = batch
         logits = self(peptides)
-        loss = F.binary_cross_entropy_with_logits(logits, y)
-        self.log("train_loss", loss, prog_bar=True)
+        loss = F.binary_cross_entropy_with_logits(logits, y, pos_weight=self.pos_weight)
+        self.log("train_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         peptides, y = batch
         logits = self(peptides)
-        loss = F.binary_cross_entropy_with_logits(logits, y)
+        loss = F.binary_cross_entropy_with_logits(logits, y, pos_weight=self.pos_weight)
         preds = torch.sigmoid(logits)
-        self.log("val_loss", loss, prog_bar=True)
-        self.log("val_auroc", tmf.auroc(preds, y.int(), task="binary"), prog_bar=True)
+
+        self.log("val_loss", loss, prog_bar=True, on_epoch=True)
+        self.log("val_auroc", tmf.auroc(preds, y.int(), task="binary"), prog_bar=True, on_epoch=True)
+        auprc = average_precision_score(y.cpu().numpy(), preds.cpu().numpy())
+        self.log("val_auprc", auprc, prog_bar=True, on_epoch=True)
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {"scheduler": scheduler, "monitor": "val_auroc"}
+        }
