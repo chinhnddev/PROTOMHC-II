@@ -1,8 +1,6 @@
 
 defaults:
   - model: esm2_frozen_prototype
-  - trainer: default          # ← có file rồi
-  - callbacks: default        # ← có file rồi
   - _self_
 
 name: ProtoMHC-II_SOTA
