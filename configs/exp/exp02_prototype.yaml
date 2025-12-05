@@ -1,27 +1,17 @@
-# configs/exp/02_prototype.yaml
-# → ĐẠT AUROC 0.95–0.97 trên 165k peptide-only (7.5% positive)
-# ĐÃ TEST 100% CHẠY NGON TRÊN COLAB + LOCAL
 
 defaults:
   - model: esm2_frozen_prototype
-  - trainer: default
-  - callbacks: default
+  - trainer: default          # ← có file rồi
+  - callbacks: default        # ← có file rồi
   - _self_
 
-# ========================================
-# Experiment config
-# ========================================
 name: ProtoMHC-II_SOTA
 batch_size: 256
 epochs: 40
 min_epochs: 12
-patience: 7
 seed: 42
 log_every_n_steps: 50
 
-# ========================================
-# Model hyperparams – ĐÃ TỐI ƯU HOÀN HẢO
-# ========================================
 model:
   _target_: src.models.esm2_frozen_prototype.ProtoMHCII
   num_prototypes: 70
@@ -29,18 +19,16 @@ model:
   weight_decay: 1e-5
   pos_weight: 12.3
 
-# ========================================
-# Trainer + Callbacks (Hydra format chuẩn)
-# ========================================
 trainer:
   accelerator: gpu
   devices: 1
-  precision: 16-mixed           # AMP → nhanh gấp 2
+  precision: 16-mixed
   max_epochs: 40
   min_epochs: 12
   gradient_clip_val: 1.0
   enable_checkpointing: true
   default_root_dir: checkpoints
+
   callbacks:
     early_stopping:
       _target_: pytorch_lightning.callbacks.EarlyStopping
@@ -49,6 +37,7 @@ trainer:
       patience: 7
       min_delta: 0.001
       verbose: true
+
     model_checkpoint:
       _target_: pytorch_lightning.callbacks.ModelCheckpoint
       monitor: val_auroc
