@@ -1,7 +1,6 @@
 defaults:
-  - exp: exp01_esm2_transformer
+  - exp: exp02_prototype   # main experiment
   - data: default
-  - model: esm2_frozen_transformer  # override per run: model=...
   - _self_
 
 hydra:
