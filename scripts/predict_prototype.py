@@ -1,70 +1,64 @@
-"""Run inference for the ProtoMHC-II model on the test split and save predictions."""
+# scripts/predict_test.py
+"""Run inference for ProtoMHC-II on test split and save predictions."""
 import argparse
 import os
-
 import joblib
 import torch
-from sklearn.metrics import roc_auc_score, average_precision_score
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 from src.data.datamodule import AntigenicityDataModule
 from src.models.esm2_frozen_prototype import ProtoMHCII
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Predict test split with ProtoMHC-II checkpoint")
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        default="checkpoints/ProtoMHC-II_SOTA/best-v1.ckpt",
-        help="Path to checkpoint file",
-    )
-    parser.add_argument(
-        "--out",
-        type=str,
-        default="results/predictions/exp02_prototype_test_preds.pkl",
-        help="Where to save (y_true, y_pred)",
-    )
-    parser.add_argument("--batch_size", type=int, default=64, help="Batch size for inference")
-    parser.add_argument("--num_workers", type=int, default=0, help="DataLoader workers")
+    parser = argparse.ArgumentParser(description="Predict test split with ProtoMHC-II")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/ProtoMHC-II_SOTA/best.ckpt",
+                        help="Path to checkpoint (.ckpt)")
+    parser.add_argument("--out", type=str, default="results/predictions/protomhcii_test_preds.pkl",
+                        help="Output pickle file (y_true, y_pred)")
+    parser.add_argument("--batch_size", type=int, default=128, help="Inference batch size")
+    parser.add_argument("--num_workers", type=int, default=4, help="DataLoader workers")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     print(f"Loading checkpoint: {args.ckpt}")
 
-    state = torch.load(args.ckpt, map_location="cpu")
-    model = ProtoMHCII(**state["hyper_parameters"])
-    model.load_state_dict(state["state_dict"], strict=False)
-    model.to(device).eval()
+    # Load checkpoint
+    ckpt = torch.load(args.ckpt, map_location=device)
+    model = ProtoMHCII(**ckpt["hyper_parameters"])
+    model.load_state_dict(ckpt["state_dict"], strict=True)  # ← strict=True an toàn hơn
+    model.to(device)
+    model.eval()
 
-    dm = AntigenicityDataModule(
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=(device == "cuda"),
-    )
+    # DataModule
+    dm = AntigenicityDataModule(batch_size=args.batch_size, num_workers=args.num_workers)
     dm.setup()
     loader = dm.test_dataloader()
 
+    # Predict
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    preds, labels = [], []
+    all_preds, all_labels = [], []
+
     with torch.no_grad():
-        for peptides, y in tqdm(loader, desc="Predicting", unit="batch"):
-            logits, _ = model(peptides)
-            preds.append(torch.sigmoid(logits).cpu())
-            labels.append(y.cpu())
+        for peptides, labels in tqdm(loader, desc="Predicting test set", unit="batch"):
+            peptides = [p.to(device) if isinstance(p, torch.Tensor) else p for p in peptides]
+            logits, _ = model(peptides)                    # ← model nhận list[str] → OK
+            all_preds.append(torch.sigmoid(logits).cpu())
+            all_labels.append(labels.cpu())
 
-    y_pred = torch.cat(preds).numpy()
-    y_true = torch.cat(labels).numpy()
+    y_pred = torch.cat(all_preds).numpy()
+    y_true = torch.cat(all_labels).numpy()
+
+    # Save
     joblib.dump((y_true, y_pred), args.out)
-
-    auroc = roc_auc_score(y_true, y_pred)
-    auprc = average_precision_score(y_true, y_pred)
-    print(f"Saved predictions to: {args.out}")
-    print(f"Test AUROC={auroc:.4f} AUPRC={auprc:.4f}")
+    print(f"Predictions saved to: {args.out}")
+    print(f"Test AUROC = {roc_auc_score(y_true, y_pred):.4f}")
+    print(f"Test AUPRC = {average_precision_score(y_true, y_pred):.4f}")
 
 
 if __name__ == "__main__":
