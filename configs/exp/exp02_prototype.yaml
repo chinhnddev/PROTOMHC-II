@@ -1,32 +1,21 @@
-
+# configs/exp/02_prototype.yaml
 defaults:
   - model: esm2_frozen_prototype
   - _self_
 
 name: ProtoMHC-II_SOTA
 batch_size: 256
-epochs: 40
+epochs: 30
 min_epochs: 12
 seed: 42
-log_every_n_steps: 50
-
-model:
-  _target_: src.models.esm2_frozen_prototype.ProtoMHCII
-  num_prototypes: 70
-  lr: 3e-4
-  weight_decay: 1e-5
-  pos_weight: 12.3
 
 trainer:
   accelerator: gpu
   devices: 1
   precision: 16-mixed
-  max_epochs: 40
+  max_epochs: 30
   min_epochs: 12
   gradient_clip_val: 1.0
-  enable_checkpointing: true
-  default_root_dir: checkpoints
-
   callbacks:
     early_stopping:
       _target_: pytorch_lightning.callbacks.EarlyStopping
@@ -34,12 +23,9 @@ trainer:
       mode: max
       patience: 7
       min_delta: 0.001
-      verbose: true
-
     model_checkpoint:
       _target_: pytorch_lightning.callbacks.ModelCheckpoint
       monitor: val_auroc
       mode: max
       save_top_k: 1
       filename: "best-{epoch:02d}-{val_auroc:.4f}"
-      verbose: true
