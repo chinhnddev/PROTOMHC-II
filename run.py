@@ -31,15 +31,19 @@ def main(cfg: DictConfig):
         )
 
     default_root_dir = os.path.join("checkpoints", cfg.exp.name)
-    callbacks.append(
-        ModelCheckpoint(
-            dirpath=default_root_dir,
-            filename="best",
-            monitor="val_auroc",
-            mode="max",
-            save_last=True,
-        )
+    # Make sure checkpoint directory exists and log where artifacts go
+    os.makedirs(default_root_dir, exist_ok=True)
+    print(f"Checkpoints will be saved to: {default_root_dir}")
+
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=default_root_dir,
+        filename="best",
+        monitor="val_auroc",
+        mode="max",
+        save_last=True,
+        verbose=True,
     )
+    callbacks.append(checkpoint_callback)
     trainer = pl.Trainer(
         max_epochs=cfg.exp.epochs,
         min_epochs=getattr(cfg.exp, "min_epochs", 1),
@@ -51,6 +55,11 @@ def main(cfg: DictConfig):
         callbacks=callbacks,
     )
     trainer.fit(model, datamodule=datamodule)
+
+    if checkpoint_callback.best_model_path:
+        print(f"Training finished. Best model saved to: {checkpoint_callback.best_model_path}")
+    else:
+        print("Training finished, but no checkpoint was saved (monitor metric may be missing).")
 
 
 if __name__ == "__main__":
