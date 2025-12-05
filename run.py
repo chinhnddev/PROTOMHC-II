@@ -5,7 +5,7 @@ import hydra
 from omegaconf import DictConfig
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 
 @hydra.main(config_path="configs", config_name="config", version_base="1.3")
@@ -31,6 +31,15 @@ def main(cfg: DictConfig):
         )
 
     default_root_dir = os.path.join("checkpoints", cfg.exp.name)
+    callbacks.append(
+        ModelCheckpoint(
+            dirpath=default_root_dir,
+            filename="best",
+            monitor="val_auroc",
+            mode="max",
+            save_last=True,
+        )
+    )
     trainer = pl.Trainer(
         max_epochs=cfg.exp.epochs,
         min_epochs=getattr(cfg.exp, "min_epochs", 1),
