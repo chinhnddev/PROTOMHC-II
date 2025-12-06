@@ -15,8 +15,8 @@ log_every_n_steps: 50
 model:
   _target_: src.models.esm2_frozen_transformer.ESM2FrozenTransformer
   num_layers: 6
-  lr: 0.0003
-  pos_weight: 12.33
+  lr: 0.0001          # giảm lr để tránh kẹt ở 0.5
+  pos_weight: 8.0     # giảm trọng số dương để training ổn định hơn
 
 # Trainer + Callbacks
 trainer:
