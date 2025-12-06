@@ -26,7 +26,7 @@ trainer:
   gradient_clip_val: 1.0
   accumulate_grad_batches: 2
   enable_checkpointing: true
-  default_root_dir: checkpoints/${name}
+  default_root_dir: checkpoints/${exp.name}
 
   callbacks:
     early_stopping:

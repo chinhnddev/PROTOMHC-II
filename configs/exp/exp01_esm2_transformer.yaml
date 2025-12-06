@@ -3,12 +3,6 @@
 defaults:
   - _self_
 
-# Hydra output location (per-experiment run folder)
-hydra:
-  run:
-    dir: outputs/${name}
-  output_subdir: null
-
 # Experiment info
 name: ESM2_Frozen_Transformer
 batch_size: 128         # effective 256 with grad accumulation
@@ -34,7 +28,7 @@ trainer:
   gradient_clip_val: 1.0
   accumulate_grad_batches: 2   # effective batch ~256
   enable_checkpointing: true
-  default_root_dir: checkpoints/${name}
+  default_root_dir: checkpoints/${exp.name}
 
   callbacks:
     early_stopping:
