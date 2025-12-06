@@ -1,13 +1,13 @@
-# configs/exp/04_protbert.yaml
-# → ĐẠT AUROC 0.92–0.94 SAU 15–20 EPOCH – ĐỦ ĐỂ LÀM BASELINE MẠNH CHO PAPER!
+# configs/exp/exp04_protbert.yaml
+# ProtBERT baseline experiment
 
 defaults:
-  - override /model: protbert_transformer   # chọn config model ở nhóm gốc, không tìm trong exp/
+  - /model: protbert_transformer
   - _self_
 
 name: ProtBERT_Transformer
-batch_size: 128         # ổn định hơn, dùng accumulation nếu cần hiệu dụng lớn
-epochs: 30              # ← 30 epoch → đủ để đạt peak performance
+batch_size: 128
+epochs: 30
 min_epochs: 10
 seed: 42
 log_every_n_steps: 50
@@ -15,7 +15,7 @@ log_every_n_steps: 50
 trainer:
   accelerator: gpu
   devices: 1
-  precision: 16-mixed                 # ← AMP → nhanh gấp 2, tiết kiệm VRAM
+  precision: 16-mixed
   max_epochs: 30
   min_epochs: 10
   gradient_clip_val: 1.0
