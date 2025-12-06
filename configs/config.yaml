@@ -5,5 +5,5 @@ defaults:
 
 hydra:
   run:
-    dir: .
+    dir: outputs/${exp.name}
   output_subdir: null
