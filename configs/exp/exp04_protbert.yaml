@@ -2,7 +2,7 @@
 # → ĐẠT AUROC 0.92–0.94 SAU 15–20 EPOCH – ĐỦ ĐỂ LÀM BASELINE MẠNH CHO PAPER!
 
 defaults:
-  - model: protbert_transformer   # ← BẮT BUỘC phải có dòng này + file configs/model/protbert_transformer.yaml
+  - override /model: protbert_transformer   # chọn config model ở nhóm gốc, không tìm trong exp/
   - _self_
 
 name: ProtBERT_Transformer
