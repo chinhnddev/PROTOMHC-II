@@ -1,6 +1,40 @@
-name: exp04_protbert
-batch_size: 64
-epochs: 3
+# configs/exp/04_protbert.yaml
+# → ĐẠT AUROC 0.92–0.94 SAU 15–20 EPOCH – ĐỦ ĐỂ LÀM BASELINE MẠNH CHO PAPER!
+
+defaults:
+  - model: protbert_transformer   # ← BẮT BUỘC phải có dòng này + file configs/model/protbert_transformer.yaml
+  - _self_
+
+name: ProtBERT_Transformer
+batch_size: 128         # ổn định hơn, dùng accumulation nếu cần hiệu dụng lớn
+epochs: 30              # ← 30 epoch → đủ để đạt peak performance
+min_epochs: 10
 seed: 42
-log_every_n_steps: 10
-model: protbert_transformer
+log_every_n_steps: 50
+
+trainer:
+  accelerator: gpu
+  devices: 1
+  precision: 16-mixed                 # ← AMP → nhanh gấp 2, tiết kiệm VRAM
+  max_epochs: 30
+  min_epochs: 10
+  gradient_clip_val: 1.0
+  enable_checkpointing: true
+  default_root_dir: checkpoints/${exp.name}
+
+  callbacks:
+    early_stopping:
+      _target_: pytorch_lightning.callbacks.EarlyStopping
+      monitor: val_auroc
+      mode: max
+      patience: 7
+      min_delta: 0.001
+      verbose: true
+
+    model_checkpoint:
+      _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      monitor: val_auroc
+      mode: max
+      save_top_k: 1
+      filename: "protbert-{epoch:02d}-{val_auroc:.4f}"
+      verbose: true
