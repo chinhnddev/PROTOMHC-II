@@ -10,12 +10,11 @@ pred_dir = "results/predictions"
 os.makedirs("results/tables", exist_ok=True)
 
 models = [
-    ("exp01_esm2_transformer", "ESM-2 + Transformer"),
-    ("exp02_prototype", "ProtoMHC-II (Ours)"),
-    ("exp03_mlp", "ESM-2 + MLP"),
-    ("exp04_protbert", "ProtBERT + Transformer"),
-    ("exp05_cnn_bilstm", "CNN+BiLSTM (scratch)"),
-    # ("exp06_esm3", "ESM-3 8B (optional)")  # omitted by default (too heavy)
+    ("esm2_transformer", "ESM-2 + Transformer"),          # file: esm2_transformer_test_preds.pkl
+    ("exp02_prototype", "ProtoMHC-II (Ours)"),            # file: exp02_prototype_test_preds.pkl
+    ("exp03_mlp", "ESM-2 + MLP"),                          # file may be missing; skip if absent
+    ("protbert", "ProtBERT + Transformer"),               # file: protbert_test_preds.pkl
+    ("cnn_bilstm", "CNN+BiLSTM (scratch)"),               # file: cnn_bilstm_test_preds.pkl
 ]
 
 results = []

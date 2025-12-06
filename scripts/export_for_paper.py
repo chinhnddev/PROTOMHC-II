@@ -2,23 +2,37 @@
 import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 
-date = datetime.now().strftime("%Y%m%d")
-paper_dir = f"Paper_Export_{date}"
-os.makedirs(paper_dir, exist_ok=True)
+def main():
+    date = datetime.now().strftime("%Y%m%d")
+    paper_dir = Path(f"Paper_Export_{date}")
+    paper_dir.mkdir(exist_ok=True)
 
-artifacts = [
-    "results/tables/Table_1_Antigenicity_Results.xlsx",
-    "results/figures/prototype_motifs_heatmap.pdf",
-    "notebooks/04_Visualize_Prototype_Motifs.ipynb",
-    "results/figures/pr_curve.pdf",
-]
+    # List of files to collect; add more as needed
+    artifacts = [
+        "results/tables/Table_1_Antigenicity_Results.xlsx",
+        "results/tables/Table_1.md",
+        "results/predictions/exp02_prototype_test_preds.pkl",
+        "results/predictions/esm2_transformer_test_preds.pkl",
+        "results/predictions/protbert_test_preds.pkl",
+        "results/predictions/cnn_bilstm_test_preds.pkl",
+        "results/predictions/ensemble_test_preds.pkl",
+        "results/figures/prototype_motifs_heatmap.pdf",
+        "results/figures/pr_curve.pdf",
+        "notebooks/04_Visualize_Prototype_Motifs.ipynb",
+    ]
 
-for path in artifacts:
-    if os.path.exists(path):
-        shutil.copy(path, os.path.join(paper_dir, os.path.basename(path)))
-    else:
-        print(f"Warning: missing {path}, skipping.")
+    for path_str in artifacts:
+        src = Path(path_str)
+        if src.exists():
+            shutil.copy(src, paper_dir / src.name)
+        else:
+            print(f"Warning: missing {src}, skipping.")
 
-print(f"Exported artifacts to: {paper_dir}")
+    print(f"Exported artifacts to: {paper_dir}")
+
+
+if __name__ == "__main__":
+    main()
