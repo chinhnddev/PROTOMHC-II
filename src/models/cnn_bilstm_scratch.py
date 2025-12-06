@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from torchmetrics import AUROC, AveragePrecision
-from sklearn.metrics import average_precision_score
 
 
 class CNNBiLSTMScratch(pl.LightningModule):
