@@ -1,11 +1,17 @@
-# Experiment: ESM2 Frozen Transformer
+# Experiment: ESM2 Frozen Transformer (tuned)
 
 defaults:
   - _self_
 
+# Hydra output location (per-experiment run folder)
+hydra:
+  run:
+    dir: outputs/${name}
+  output_subdir: null
+
 # Experiment info
 name: ESM2_Frozen_Transformer
-batch_size: 256
+batch_size: 128         # effective 256 with grad accumulation
 epochs: 30
 min_epochs: 10
 seed: 42
@@ -14,9 +20,9 @@ log_every_n_steps: 50
 # Model parameters
 model:
   _target_: src.models.esm2_frozen_transformer.ESM2FrozenTransformer
-  num_layers: 6
-  lr: 0.0001          # giảm lr để tránh kẹt ở 0.5
-  pos_weight: 8.0     # giảm trọng số dương để training ổn định hơn
+  num_layers: 4         # smaller head to reduce overfit
+  lr: 0.00005           # lower LR for stability
+  pos_weight: 6.0       # softer class weight to avoid oscillation
 
 # Trainer + Callbacks
 trainer:
@@ -26,8 +32,9 @@ trainer:
   max_epochs: 30
   min_epochs: 10
   gradient_clip_val: 1.0
+  accumulate_grad_batches: 2   # effective batch ~256
   enable_checkpointing: true
-  default_root_dir: checkpoints
+  default_root_dir: ${hydra:run.dir}/checkpoints
 
   callbacks:
     early_stopping:
