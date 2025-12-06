@@ -2,7 +2,7 @@
 # AUROC 0.96+ target (30 epochs, ~9–11h)
 
 name: ProtoMHC-II_SOTA
-batch_size: 256
+batch_size: 128
 epochs: 30
 min_epochs: 12
 seed: 42
@@ -11,10 +11,10 @@ patience: 7  # early stop if no val_auroc improvement after 7 epochs
 
 model:
   _target_: src.models.esm2_frozen_prototype.ProtoMHCII
-  num_prototypes: 70
-  lr: 0.0003
+  num_prototypes: 60
+  lr: 0.00005
   weight_decay: 0.00001
-  pos_weight: 12.33
+  pos_weight: 6.0
   esm_model_name: esm2_t33_650M_UR50D
 
 trainer:
@@ -24,6 +24,7 @@ trainer:
   max_epochs: 30
   min_epochs: 12
   gradient_clip_val: 1.0
+  accumulate_grad_batches: 2
   enable_checkpointing: true
   default_root_dir: checkpoints/${name}
 

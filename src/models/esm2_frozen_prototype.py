@@ -23,6 +23,7 @@ class ProtoMHCII(pl.LightningModule):
         self.batch_converter = self.alphabet.get_batch_converter()
         for p in self.esm.parameters():
             p.requires_grad = False
+        self.esm.eval()  # keep frozen backbone deterministic
         plm_dim = self.esm.embed_dim  # 1280
 
         # 2) Prototypes
@@ -60,15 +61,29 @@ class ProtoMHCII(pl.LightningModule):
         tokens = tokens.to(self.device)
         with torch.no_grad():
             results = self.esm(tokens, repr_layers=[33])
-        return results["representations"][33]  # (B, L, D)
+        x = results["representations"][33]  # (B, L, D)
+
+        padding_idx = self.alphabet.padding_idx
+        cls_idx = getattr(self.alphabet, "cls_idx", None)
+        eos_idx = getattr(self.alphabet, "eos_idx", None)
+        key_padding_mask = tokens.eq(padding_idx)
+        valid_tokens = ~key_padding_mask
+        if cls_idx is not None:
+            valid_tokens &= tokens.ne(cls_idx)
+        if eos_idx is not None:
+            valid_tokens &= tokens.ne(eos_idx)
+
+        return x, key_padding_mask, valid_tokens
 
     def forward(self, peptides):
-        x = self.encode_peptides_with_esm(peptides)
+        x, key_padding_mask, valid_tokens = self.encode_peptides_with_esm(peptides)
         B, L, D = x.size()
 
         proto = self.proto_proj(self.prototypes).unsqueeze(0).expand(B, -1, -1)
 
-        attn_out, attn_weights = self.attn(proto, x, x)
+        attn_out, attn_weights = self.attn(
+            proto, x, x, key_padding_mask=key_padding_mask
+        )
         context = attn_out.mean(dim=1)
         logits = self.classifier(context).squeeze(-1)
         return logits, attn_weights
