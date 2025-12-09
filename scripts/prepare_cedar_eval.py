@@ -20,12 +20,21 @@ def load_epitopes(path: Path):
         rows = list(csv.reader(f))
     if not rows:
         return []
+
+    # Older export style has a first row full of "Epitopes"; newer exports have field names.
     start = 1 if all(cell == "Epitopes" for cell in rows[0]) else 0
     headers = rows[start]
-    try:
-        epi_idx = headers.index("Epitope")
-    except ValueError as exc:
-        raise ValueError("Epitope column not found") from exc
+
+    # Find the epitope column by exact name or suffix (e.g., "Epitopes - Epitope").
+    epi_idx = None
+    for i, h in enumerate(headers):
+        h_norm = h.lower().strip()
+        if h == "Epitope" or h_norm.endswith("epitope"):
+            epi_idx = i
+            break
+    if epi_idx is None:
+        raise ValueError(f"Epitope column not found in headers: {headers}")
+
     peptides = []
     for r in rows[start + 1 :]:
         if len(r) <= epi_idx:
