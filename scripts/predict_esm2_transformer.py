@@ -4,7 +4,12 @@ import os
 import joblib
 import torch
 from tqdm import tqdm
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    accuracy_score,
+    f1_score,
+)
 
 from src.data.datamodule import AntigenicityDataModule
 from src.models.esm2_frozen_transformer import ESM2FrozenTransformer
@@ -67,8 +72,17 @@ def main():
 
     joblib.dump((y_true, y_pred), args.out)
     print(f"Predictions saved to: {args.out}")
-    print(f"Test AUROC = {roc_auc_score(y_true, y_pred):.4f}")
-    print(f"Test AUPRC = {average_precision_score(y_true, y_pred):.4f}")
+
+    auroc = roc_auc_score(y_true, y_pred)
+    auprc = average_precision_score(y_true, y_pred)
+    y_hat = (y_pred >= 0.5).astype(int)
+    acc = accuracy_score(y_true, y_hat)
+    f1 = f1_score(y_true, y_hat)
+
+    print(f"Test AUROC = {auroc:.4f}")
+    print(f"Test AUPRC = {auprc:.4f}")
+    print(f"Test ACC   = {acc:.4f} @0.5")
+    print(f"Test F1    = {f1:.4f} @0.5")
 
 
 if __name__ == "__main__":
