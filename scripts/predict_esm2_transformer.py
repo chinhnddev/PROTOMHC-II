@@ -26,6 +26,12 @@ def parse_args():
     )
     parser.add_argument("--batch_size", type=int, default=128, help="Inference batch size")
     parser.add_argument("--num_workers", type=int, default=4, help="DataLoader workers")
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="data/processed/mhcII_dataset_split.parquet",
+        help="Parquet file with split column (train/val/test)",
+    )
     return parser.parse_args()
 
 
@@ -39,7 +45,11 @@ def main():
     model.to(device)
     model.eval()
 
-    dm = AntigenicityDataModule(batch_size=args.batch_size, num_workers=args.num_workers)
+    dm = AntigenicityDataModule(
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        data_path=args.data_path,
+    )
     dm.setup()
     loader = dm.test_dataloader()
 
