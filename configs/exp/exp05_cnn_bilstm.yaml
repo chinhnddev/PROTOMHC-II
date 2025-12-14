@@ -1,26 +1,27 @@
-# configs/exp/05_cnn_bilstm.yaml
+# configs/exp/exp05_cnn_bilstm.yaml
 defaults:
   - _self_
 
 name: CNN_BiLSTM_Scratch
-batch_size: 128        # model nhẹ → 128 là đủ
-epochs: 40
-min_epochs: 10
+batch_size: 64
+epochs: 50
+min_epochs: 12
 seed: 42
 log_every_n_steps: 50
 
 model:
   _target_: src.models.cnn_bilstm_scratch.CNNBiLSTMScratch
-  lr: 0.0005
-  pos_weight: 6.0
+  lr: 0.0002
+  pos_weight: 3.0
 
 trainer:
   accelerator: gpu
   devices: 1
   precision: 16-mixed
-  max_epochs: 40
-  min_epochs: 10
+  max_epochs: 50
+  min_epochs: 12
   gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
   enable_checkpointing: true
   default_root_dir: checkpoints/${exp.name}
 
@@ -29,7 +30,7 @@ trainer:
       _target_: pytorch_lightning.callbacks.EarlyStopping
       monitor: val_auroc
       mode: max
-      patience: 7
+      patience: 10
       min_delta: 0.001
       verbose: true
 
