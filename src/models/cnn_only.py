@@ -8,7 +8,15 @@ from torchmetrics.functional.classification import precision_recall_curve
 
 
 class CNNOnlyScratch(pl.LightningModule):
-    def __init__(self, vocab_size=25, embed_dim=128, lr=1e-3, pos_weight=12.33, pooling: str = "mean"):
+    def __init__(
+        self,
+        vocab_size=25,
+        embed_dim=128,
+        lr=1e-3,
+        pos_weight=12.33,
+        pooling: str = "mean",
+        dropout: float = 0.4,
+    ):
         super().__init__()
         self.save_hyperparameters()
 
@@ -32,7 +40,7 @@ class CNNOnlyScratch(pl.LightningModule):
             nn.LayerNorm(512),
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(dropout),
             nn.Linear(256, 1),
         )
 

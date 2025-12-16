@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class CNNBiLSTMScratch(pl.LightningModule):
-    def __init__(self, vocab_size=25, embed_dim=128, lr=1e-3, pos_weight=12.33):
+    def __init__(self, vocab_size=25, embed_dim=128, lr=1e-3, pos_weight=12.33, dropout: float = 0.4):
         super().__init__()
         self.save_hyperparameters()
 
@@ -24,13 +24,14 @@ class CNNBiLSTMScratch(pl.LightningModule):
             nn.Conv1d(256, 256, kernel_size=5, padding=2),
             nn.ReLU(),
         )
-        self.bilstm = nn.LSTM(256, 256, batch_first=True, bidirectional=True, dropout=0.3)
+        lstm_dropout = 0.0  # num_layers=1 so dropout not applied
+        self.bilstm = nn.LSTM(256, 256, batch_first=True, bidirectional=True, dropout=lstm_dropout)
         
         self.classifier = nn.Sequential(
             nn.LayerNorm(512),
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(dropout),
             nn.Linear(256, 1),
         )
 
