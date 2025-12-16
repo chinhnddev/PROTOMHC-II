@@ -107,7 +107,7 @@ class CNNBiLSTMAttention(pl.LightningModule):
         all_targets = torch.cat(self.val_targets) if self.val_targets else torch.tensor([])
 
         if all_preds.numel() > 0 and all_targets.numel() > 0:
-            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets)
+            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets, task="binary")
             if thresholds.numel() > 0:
                 f1_scores = (2 * precision[1:] * recall[1:]) / (precision[1:] + recall[1:] + 1e-8)
                 best_idx = torch.argmax(f1_scores)
