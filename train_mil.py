@@ -128,7 +128,10 @@ def main():
         if val_auprc > best_val_auprc:
             best_val_auprc = val_auprc
             epochs_no_improve = 0
-            torch.save({"model_state": model.state_dict(), "args": vars(args)}, best_ckpt)
+            args_to_save = vars(args).copy()
+            args_to_save["data_path"] = str(args_to_save["data_path"])
+            args_to_save["output_dir"] = str(args_to_save["output_dir"])
+            torch.save({"model_state": model.state_dict(), "args": args_to_save}, best_ckpt)
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
@@ -136,7 +139,7 @@ def main():
                 break
 
     if best_ckpt.exists():
-        checkpoint = torch.load(best_ckpt, map_location=device)
+        checkpoint = torch.load(best_ckpt, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint["model_state"])
         print(f"Loaded best checkpoint from {best_ckpt}")
 
