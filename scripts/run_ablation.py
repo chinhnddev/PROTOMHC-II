@@ -59,7 +59,7 @@ def get_preds_and_targets(model: pl.LightningModule, dataloader, device) -> Tupl
 
 
 def select_best_threshold(preds: torch.Tensor, targets: torch.Tensor) -> Tuple[float, float, float, float, float]:
-    precision, recall, thresholds = precision_recall_curve(preds, targets)
+    precision, recall, thresholds = precision_recall_curve(preds, targets.int(), task="binary")
     if thresholds.numel() == 0:
         return 0.5, 0.0, 0.0, 0.0, 0.0
 
