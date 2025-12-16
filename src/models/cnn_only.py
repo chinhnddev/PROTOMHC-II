@@ -99,7 +99,8 @@ class CNNOnlyScratch(pl.LightningModule):
         all_targets = torch.cat(self.val_targets) if self.val_targets else torch.tensor([])
 
         if all_preds.numel() > 0 and all_targets.numel() > 0:
-            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets, task="binary")
+            all_targets_int = all_targets.int()
+            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets_int, task="binary")
             if thresholds.numel() > 0:
                 f1_scores = (2 * precision[1:] * recall[1:]) / (precision[1:] + recall[1:] + 1e-8)
                 best_idx = torch.argmax(f1_scores)
@@ -109,7 +110,7 @@ class CNNOnlyScratch(pl.LightningModule):
                 best_recall = recall[best_idx + 1]
 
                 preds_bin = (all_preds >= best_threshold).int()
-                acc = (preds_bin == all_targets.int()).float().mean()
+                acc = (preds_bin == all_targets_int).float().mean()
 
                 self.log("val_threshold_opt", best_threshold)
                 self.log("val_f1", best_f1, prog_bar=True)
@@ -119,7 +120,7 @@ class CNNOnlyScratch(pl.LightningModule):
 
             # Top-K screening metrics
             sorted_indices = torch.argsort(all_preds, descending=True)
-            sorted_targets = all_targets[sorted_indices]
+            sorted_targets = all_targets_int[sorted_indices]
             for k in (20, 50):
                 if sorted_targets.numel() >= k:
                     topk = sorted_targets[:k]
