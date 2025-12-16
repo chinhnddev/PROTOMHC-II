@@ -93,7 +93,8 @@ class CNNBiLSTMScratch(pl.LightningModule):
         all_preds = torch.cat(self.val_preds) if self.val_preds else torch.tensor([])
         all_targets = torch.cat(self.val_targets) if self.val_targets else torch.tensor([])
         if all_preds.numel() > 0 and all_targets.numel() > 0:
-            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets)
+            all_targets_int = all_targets.int()
+            precision, recall, thresholds = precision_recall_curve(all_preds, all_targets_int, task="binary")
             if thresholds.numel() > 0:
                 f1_scores = (2 * precision[1:] * recall[1:]) / (precision[1:] + recall[1:] + 1e-8)
                 best_idx = torch.argmax(f1_scores)
@@ -102,10 +103,10 @@ class CNNBiLSTMScratch(pl.LightningModule):
                 best_precision = precision[best_idx + 1]
                 best_recall = recall[best_idx + 1]
 
-                self.log("val_f1_opt", best_f1, prog_bar=True)
-                self.log("val_precision_opt", best_precision)
-                self.log("val_recall_opt", best_recall)
-                self.log("val_threshold_opt", best_threshold)
+            self.log("val_f1_opt", best_f1, prog_bar=True)
+            self.log("val_precision_opt", best_precision)
+            self.log("val_recall_opt", best_recall)
+            self.log("val_threshold_opt", best_threshold)
 
         self.val_preds.clear()
         self.val_targets.clear()
