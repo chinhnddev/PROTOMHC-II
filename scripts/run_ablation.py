@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
+import sys
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 
 import pytorch_lightning as pl
@@ -12,6 +14,11 @@ from torchmetrics.functional.classification import (
     binary_average_precision,
     precision_recall_curve,
 )
+
+# Allow running from arbitrary working dirs (e.g., Colab)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
 from src.data.datamodule import AntigenicityDataModule
 from src.models.cnn_bilstm_attention import CNNBiLSTMAttention
