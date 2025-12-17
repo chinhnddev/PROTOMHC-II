@@ -206,7 +206,10 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else args.device)
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
 
     print(f"Loading model from {args.ckpt_path}")
     model = load_model(args.ckpt_path, map_location=device)
