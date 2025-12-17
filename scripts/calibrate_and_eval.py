@@ -45,9 +45,21 @@ def set_seed(seed: int):
     torch.use_deterministic_algorithms(False)
 
 
-def load_model(ckpt_path: str, map_location: str = "cpu") -> pl.LightningModule:
-    """Load Lightning model from checkpoint; requires class to be importable."""
-    return pl.LightningModule.load_from_checkpoint(ckpt_path, map_location=map_location)
+def load_model(ckpt_path: str, model_name: str, map_location: torch.device) -> pl.LightningModule:
+    """Load checkpoint with an explicit model choice."""
+    from src.models.cnn_bilstm_attention import CNNBiLSTMAttention
+    from src.models.cnn_bilstm_scratch import CNNBiLSTMScratch
+    from src.models.cnn_only import CNNOnlyScratch
+
+    name_to_cls = {
+        "cnn_only": CNNOnlyScratch,
+        "cnn_bilstm_mean": CNNBiLSTMScratch,
+        "cnn_bilstm_attention": CNNBiLSTMAttention,
+    }
+    if model_name not in name_to_cls:
+        raise ValueError(f"Unknown model '{model_name}'. Choices: {list(name_to_cls)}")
+    cls = name_to_cls[model_name]
+    return cls.load_from_checkpoint(ckpt_path, map_location=map_location)
 
 
 def get_logits_labels(model: pl.LightningModule, dataloader: DataLoader, device: torch.device) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -189,6 +201,13 @@ def to_markdown(before: MetricResult, after: MetricResult, k_list: Sequence[int]
 def parse_args():
     parser = argparse.ArgumentParser(description="Temperature scaling calibration and evaluation.")
     parser.add_argument("--ckpt_path", type=str, required=True, help="Path to Lightning checkpoint.")
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        choices=["cnn_only", "cnn_bilstm_mean", "cnn_bilstm_attention"],
+        help="Model class of the checkpoint.",
+    )
     parser.add_argument("--data_path", type=str, required=True, help="Dataset with split column.")
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--output_dir", type=str, default="reports")
@@ -212,7 +231,7 @@ def main():
         device = torch.device(args.device)
 
     print(f"Loading model from {args.ckpt_path}")
-    model = load_model(args.ckpt_path, map_location=device)
+    model = load_model(args.ckpt_path, model_name=args.model, map_location=device)
 
     dm, val_loader, test_loader = build_dataloaders(args.data_path, args.batch_size, num_workers=args.num_workers)
 
